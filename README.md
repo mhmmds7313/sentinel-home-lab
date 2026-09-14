@@ -1,14 +1,12 @@
-# sentinel-home-lab
-Microsoft Sentinel home lab: SIEM deployment, Windows log ingestion, and KQL-based threat detection
-
-
-
-
 # Microsoft Sentinel Home Lab
 
-I built this lab to get hands-on experience with a real SIEM outside of guided training platforms. The goal was simple: deploy Sentinel in Azure, connect a Windows machine, generate a real security event, and detect it with a KQL query.
+I built this lab to get hands-on experience with a real SIEM outside of guided training platforms. The repo covers two things: connecting a Windows endpoint to Sentinel, and building a detection rule on top of it.
 
-## What I Used
+---
+
+## Project 1: Log Ingestion & First Query
+
+### What I Used
 
 | Component | What It Was |
 |-----------|-------------|
@@ -19,7 +17,7 @@ I built this lab to get hands-on experience with a real SIEM outside of guided t
 | Agent | Azure Monitor Agent (AMA) |
 | Rule | DCR-Windows-Security-Events |
 
-## How I Set It Up
+### How I Set It Up
 
 1. Created a Log Analytics workspace in Azure
 2. Turned on Microsoft Sentinel for that workspace
@@ -30,20 +28,22 @@ I built this lab to get hands-on experience with a real SIEM outside of guided t
 
 The fifth step was the one that made it feel real. Seeing my own failed login attempts show up in a SIEM dashboard is different from reading about it in a course.
 
-## The Query
+### What the Results Looked Like
 
-```kusto
+![Sentinel 4625 Query Results](screenshots/sentinel-4625-query-results.png)
 
-SecurityEvent
-| where EventID == 4625
-| project TimeGenerated, Computer, Account, IpAddress, EventID
-| order by TimeGenerated desc
+### What I Learned
 
+- **Patience with ingestion.** After creating the Data Collection Rule, nothing showed up for several minutes. I thought I'd done something wrong. Turns out log ingestion just takes time.
+- **The agent has to be there.** No Azure Monitor Agent, no logs. Simple as that.
+- **Event ID 4625 is not just one thing.** It captures failed logons from interactive logins, network logins, and service accounts. Context matters when triaging.
+- **KQL is actually enjoyable.** Once I got the syntax, filtering and projecting fields felt natural.
 
+---
 
-## Detection Rule
+## Project 2: Brute Force Detection Rule
 
-After verifying the log pipeline, I built a custom analytics rule in Sentinel:
+### What I Built
 
 - **Rule name:** Brute Force - Multiple Failed Logins
 - **Logic:** Fires when 5 or more Event ID 4625 events occur on the same computer within 5 minutes
@@ -52,7 +52,7 @@ After verifying the log pipeline, I built a custom analytics rule in Sentinel:
 - **Severity:** Medium
 - **Response:** Automatically creates an incident for investigation
 
-The KQL query behind the rule:
+### The Detection Query
 
 ```kusto
 SecurityEvent
