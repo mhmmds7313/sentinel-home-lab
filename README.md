@@ -41,4 +41,21 @@ SecurityEvent
 
 
 
+## Detection Rule
 
+After verifying the log pipeline, I built a custom analytics rule in Sentinel:
+
+- **Rule name:** Brute Force - Multiple Failed Logins
+- **Logic:** Fires when 5 or more Event ID 4625 events occur on the same computer within 5 minutes
+- **Schedule:** Runs every 5 minutes, looking back at the last 5 minutes
+- **MITRE ATT&CK:** T1110 (Brute Force) under Credential Access
+- **Severity:** Medium
+- **Response:** Automatically creates an incident for investigation
+
+The KQL query behind the rule:
+
+```kusto
+SecurityEvent
+| where EventID == 4625
+| summarize FailedAttempts = count() by Computer, Account, bin(TimeGenerated, 5m)
+| where FailedAttempts >= 5
