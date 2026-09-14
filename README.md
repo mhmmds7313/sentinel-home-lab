@@ -43,19 +43,38 @@ The fifth step was the one that made it feel real. Seeing my own failed login at
 
 ## Project 2: Brute Force Detection Rule
 
-### What I Built
+### What I Used
 
-- **Rule name:** Brute Force - Multiple Failed Logins
-- **Logic:** Fires when 5 or more Event ID 4625 events occur on the same computer within 5 minutes
-- **Schedule:** Runs every 5 minutes, looking back at the last 5 minutes
-- **MITRE ATT&CK:** T1110 (Brute Force) under Credential Access
-- **Severity:** Medium
-- **Response:** Automatically creates an incident for investigation
+| Component | What It Was |
+|-----------|-------------|
+| SIEM | Microsoft Sentinel |
+| Query Language | KQL |
+| Log Source | Windows Security Events (Sentinel-Win-VM) |
+| Event ID | 4625 (Failed Logon) |
+| Framework | MITRE ATT&CK T1110 (Brute Force) |
+| Schedule | Every 5 minutes, 5-minute lookback |
 
-### The Detection Query
+### How I Set It Up
 
-```kusto
-SecurityEvent
-| where EventID == 4625
-| summarize FailedAttempts = count() by Computer, Account, bin(TimeGenerated, 5m)
-| where FailedAttempts >= 5
+1. Opened Analytics in Microsoft Sentinel
+2. Created a new scheduled query rule
+3. Named it "Brute Force - Multiple Failed Logins" and set severity to Medium
+4. Mapped it to MITRE ATT&CK T1110 under Credential Access
+5. Wrote a KQL query that counts failed logins per computer and account in 5-minute windows
+6. Set the rule to fire when that count reaches 5 or more
+7. Enabled incident creation so alerts become investigable cases
+
+The whole thing took about 30 minutes, but the thinking behind the threshold took longer. Five failures in five minutes feels like the right balance between catching real attacks and not drowning in noise.
+
+### What the Rule Looked Like
+
+![Brute Force Detection Rule](screenshots/sentinel-brute-force-rule.png)
+
+### What I Learned
+
+- **A rule is just a query with a schedule.** The same KQL I used to investigate manually became the backbone of the detection. The only additions were frequency, threshold, and what to do when it fires.
+- **MITRE ATT&CK mapping changes how you think.** Once I tagged this as T1110, I started thinking about what an attacker would do next. One alert is never the full story.
+- **Thresholds matter.** Five failures in five minutes is aggressive enough to catch brute force but loose enough to avoid alerting on a user who mistyped their password twice. Real tuning is ongoing.
+- **Incidents vs. alerts.** Sentinel groups alerts into incidents so analysts investigate one case instead of a hundred notifications. That distinction matters at scale.
+
+---
